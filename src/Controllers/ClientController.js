@@ -12,7 +12,7 @@ const accessList = async (req, res) => {
     return res.json(clients);
   }
 
-  const clients = await Client.find({ active: true });
+  const clients = await Client.find({ active: true }).populate("location");
 
   return res.json(clients);
 };
@@ -42,8 +42,8 @@ const create = async (req, res) => {
     userID,
     features,
     image,
-    idLotacao,
   } = req.body;
+
   const errorMessage = validation.validate(
     name,
     cpf,
@@ -60,10 +60,10 @@ const create = async (req, res) => {
   try {
     const token = req.headers["x-access-token"];
     const user = await getUser(userID, token);
-
     if (user.error) {
       return res.status(400).json({ message: user.error });
     }
+
     const date = moment
       .utc(moment.tz("America/Sao_Paulo").format("YYYY-MM-DDTHH:mm:ss"))
       .toDate();
@@ -84,11 +84,11 @@ const create = async (req, res) => {
         label: "created",
       },
       image,
-      lotacao: idLotacao,
       createdAt: date,
       updatedAt: date,
     });
-    return res.json(client).populate("lotacao");
+    //const fullCliente = await Client.findOne({email:client.email}).populate('location');
+    return res.json(client);
   } catch (error) {
     return res.status(400).json({ message: error.keyValue });
   }
@@ -108,7 +108,6 @@ const update = async (req, res) => {
     userID,
     features,
     image,
-    idLotacao,
   } = req.body;
 
   const errorMessage = validation.validate(
@@ -134,7 +133,7 @@ const update = async (req, res) => {
     }
 
     const clientHistory = await verifyChanges(req.body, id);
-    const clientBeforeUpdate = await Client.findOneAndUpdate(
+    const client = await Client.findOneAndUpdate(
       { _id: id },
       {
         name,
@@ -148,16 +147,13 @@ const update = async (req, res) => {
         address,
         history: clientHistory,
         image,
-        lotacao: idLotacao,
         updatedAt: moment
           .utc(moment.tz("America/Sao_Paulo").format("YYYY-MM-DDTHH:mm:ss"))
           .toDate(),
       },
       { new: true }
     );
-
-    const clientAfterUpdate = await Client.findById(id).populate("lotacao");
-    return res.json(clientAfterUpdate);
+    return res.json(client);
   } catch (error) {
     return res.status(400).json({ duplicated: error.keyValue });
   }
