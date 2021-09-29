@@ -52,7 +52,7 @@ const create = async (req, res) => {
     secondaryPhone,
     office
   );
-
+  
   if (errorMessage.length) {
     return res.status(400).json({ message: errorMessage });
   }
